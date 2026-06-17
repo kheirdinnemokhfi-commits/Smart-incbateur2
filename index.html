@@ -364,7 +364,48 @@
         .emergency-btn:hover { transform: scale(1.15); }
         .emergency-icon { font-size: 2em; animation: rotate 2s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+* ── بطاقة الأسرة في القائمة ── */
+.family-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s; position: relative;
+}
+.family-item:hover  { background: rgba(102,126,234,0.07); }
+.family-item.active { background: rgba(102,126,234,0.14); }
+.family-item:last-child { border-bottom: none; }
 
+.family-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 1.05em; flex-shrink: 0;
+}
+.family-info { flex: 1; min-width: 0; }
+.family-name  { font-weight:700; font-size:.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.family-preview { font-size:.76em; opacity:.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.family-unread  { background:var(--danger); color:white; border-radius:10px; padding:2px 8px; font-size:.72em; font-weight:700; flex-shrink:0; }
+.family-time    { font-size:.7em; opacity:.5; flex-shrink:0; }
+
+/* ── فقاعات المحادثة ── */
+.pc-msg { display:flex; gap:10px; animation:slideIn 0.25s ease; }
+.pc-msg.team { flex-direction:row-reverse; }
+.pc-bubble { max-width:72%; padding:12px 16px; border-radius:16px; line-height:1.6; font-size:.9em; word-break:break-word; }
+.pc-msg.parent .pc-bubble { background:white; color:var(--dark,#1f2937); border:1.5px solid var(--border); border-top-right-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+[data-theme="dark"] .pc-msg.parent .pc-bubble { background:#374151; color:#f9fafb; }
+.pc-msg.team .pc-bubble { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border-top-left-radius:4px; }
+.pc-av { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2em; flex-shrink:0; align-self:flex-end; }
+.pc-msg.parent .pc-av { background:rgba(102,126,234,0.12); }
+.pc-msg.team   .pc-av { background:rgba(16,185,129,0.15); }
+.pc-meta { font-size:.72em; opacity:.55; margin-top:4px; }
+.pc-msg.team .pc-meta { text-align:left; }
+.qr-item { padding:9px 12px; border-radius:8px; font-size:.82em; cursor:pointer; transition:background .15s; border:none; background:transparent; width:100%; text-align:right; color:var(--text); display:block; line-height:1.5; }
+.qr-item:hover { background:rgba(102,126,234,.1); }
+.pc-date-divider { text-align:center; margin:10px 0; position:relative; }
+.pc-date-divider::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border); }
+.pc-date-divider span { background:var(--light); padding:3px 14px; border-radius:20px; font-size:.76em; opacity:.65; position:relative; border:1px solid var(--border); }
+[data-theme="dark"] .pc-date-divider span { background:#374151; }
+        
         @media (max-width:768px) {
             .grid,.grid-2 { grid-template-columns:1fr; }
             .sensor-grid  { grid-template-columns:1fr; }
@@ -523,6 +564,15 @@
     <div class="tabs">
         <button class="tab active" onclick="switchTab('monitoring')">📊 المراقبة الحية</button>
         <button class="tab" onclick="switchTab('control')">⚙️ التحكم والإعدادات</button>
+        <button class="tab" onclick="switchTab('parentChat')" id="tabParentChat">
+  💬 محادثة الأولياء
+  <span id="chatUnreadBadge"
+    style="display:none; background:#ef4444; color:white;
+           border-radius:10px; padding:1px 8px;
+           font-size:0.72em; margin-right:5px; vertical-align:middle;">
+    0
+  </span>
+    </button>
         <button class="tab" onclick="switchTab('ai')">🤖 الذكاء الاصطناعي الطبي</button>
         <button class="tab" onclick="switchTab('charts')">📈 الرسوم البيانية</button>
         <button class="tab" onclick="switchTab('alerts')">🚨 التنبيهات</button>
@@ -937,7 +987,111 @@
             </div>
         </div>
     </div>
+<!-- ===== تبويب محادثة الأولياء ===== -->
+<div id="parentChat" class="tab-content">
 
+  <!-- رأس التبويب -->
+  <div class="card" style="background:linear-gradient(135deg,#1a3a5c,#2a6496,#1a7a6e);color:white;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:18px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:2em;">👨‍👩‍👧</div>
+      <div>
+        <h2 style="font-size:1.4em;margin-bottom:5px;">محادثة الأولياء</h2>
+        <p style="opacity:.85;font-size:.9em;">تواصل مباشر مع أسر المرضى</p>
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <span id="pcConnStatus" style="background:rgba(255,255,255,.15);padding:5px 14px;border-radius:20px;font-size:.8em;font-weight:700;display:flex;align-items:center;gap:6px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block;" id="pcConnDot"></span>
+            <span id="pcConnTxt">يتطلب اتصال Firebase</span>
+          </span>
+          <span id="pcUnreadCount" style="background:rgba(239,68,68,.25);padding:5px 14px;border-radius:20px;font-size:.8em;font-weight:700;display:none;">
+            📬 <span id="pcUnreadNum">0</span> رسالة جديدة
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:320px 1fr;gap:20px;align-items:start;">
+
+    <!-- العمود الأيسر: قائمة الأسر -->
+    <div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:700;color:var(--primary);">👨‍👩‍👧 الأسر المتواصلة</span>
+          <button onclick="refreshFamilyList()" style="background:transparent;border:none;cursor:pointer;font-size:1.1em;color:var(--primary);">🔄</button>
+        </div>
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+          <input type="text" id="familySearch" placeholder="🔍 ابحث..."
+            oninput="filterFamilies(this.value)"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.85em;font-family:inherit;background:var(--light);color:var(--text);outline:none;">
+        </div>
+        <div id="familyList" style="max-height:420px;overflow-y:auto;">
+          <div id="familyEmpty" style="padding:40px 20px;text-align:center;opacity:.5;font-size:.88em;">
+            <div style="font-size:2.5em;margin-bottom:10px;">📭</div>
+            لا توجد محادثات بعد
+          </div>
+        </div>
+      </div>
+
+      <!-- ملاحظة طبية -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title" style="font-size:1em;"><span>📋</span> ملاحظة للأسرة</div>
+        <textarea id="noteForFamily" rows="3"
+          placeholder="اكتب ملاحظة تظهر في بوابة الأولياء..."
+          style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.85em;font-family:inherit;background:var(--light);color:var(--text);resize:vertical;outline:none;"></textarea>
+        <button onclick="sendNoteToFamily()"
+          style="margin-top:10px;width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;font-weight:700;cursor:pointer;font-size:.9em;">
+          📌 نشر الملاحظة
+        </button>
+      </div>
+    </div>
+
+    <!-- العمود الأيمن: نافذة المحادثة -->
+    <div>
+      <div style="background:var(--card-bg);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);border:1px solid var(--border);display:flex;flex-direction:column;height:620px;">
+
+        <!-- رأس المحادثة -->
+        <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;padding:16px 22px;display:flex;align-items:center;gap:14px;min-height:72px;">
+          <div id="pcFamilyAvatar" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.6em;">👤</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;" id="pcFamilyName">اختر أسرة من القائمة</div>
+            <div style="font-size:.78em;opacity:.85;" id="pcFamilyFile">—</div>
+          </div>
+          <div id="pcOnlineBadge" style="background:rgba(255,255,255,.15);padding:5px 12px;border-radius:20px;font-size:.78em;font-weight:600;">⏸ لا يوجد اختيار</div>
+        </div>
+
+        <!-- منطقة الرسائل -->
+        <div id="pcMessages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:var(--light);">
+          <div id="pcNoFamily" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:.4;padding:60px 20px;text-align:center;">
+            <div style="font-size:4em;margin-bottom:14px;">💬</div>
+            <div style="font-size:1.05em;font-weight:600;">اختر أسرة من القائمة</div>
+          </div>
+        </div>
+
+        <!-- صندوق الإدخال -->
+        <div style="padding:16px 18px;border-top:1.5px solid var(--border);background:var(--card-bg);display:flex;gap:10px;align-items:flex-end;">
+          <div style="position:relative;">
+            <button onclick="toggleQuickReplies()"
+              style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border);background:var(--light);cursor:pointer;font-size:1.1em;flex-shrink:0;"
+              title="ردود جاهزة">⚡</button>
+            <div id="quickRepliesPanel"
+              style="display:none;position:absolute;bottom:48px;right:0;background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:8px;width:280px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;">
+              <div style="font-size:.75em;font-weight:700;color:var(--primary);padding:4px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:6px;">⚡ ردود جاهزة</div>
+              <div id="quickRepliesList"></div>
+            </div>
+          </div>
+          <textarea id="pcReplyInput" placeholder="اكتب ردك..." rows="1" disabled
+            onkeydown="pcHandleKey(event)"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
+            style="flex:1;padding:12px 16px;border:1.5px solid var(--border);border-radius:22px;font-size:.92em;font-family:inherit;background:var(--light);color:var(--text);resize:none;outline:none;max-height:120px;"></textarea>
+          <button onclick="sendTeamReply()" id="pcSendBtn" disabled
+            style="width:44px;height:44px;border-radius:50%;border:none;flex-shrink:0;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;font-size:1.2em;cursor:pointer;opacity:.4;">➤</button>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /grid -->
+</div><!-- /tab-content#parentChat -->
+    
     <!-- ===== تبويب الذكاء الاصطناعي ===== -->
     <div id="ai" class="tab-content">
         <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;">
@@ -2238,7 +2392,235 @@ function loadMedicalRecord() {
         medUpdateHeader(); medUpdateApgar();
     } catch(e){console.error(e);}
 }
+// ═══════════════════════════════════════════════════════════════
+//  💬 تبويب "محادثة الأولياء" — منطق الفريق الطبي
+// ═══════════════════════════════════════════════════════════════
 
+let pcSelectedFamily = null;
+let pcFamiliesData   = {};
+let pcFamiliesUnsub  = null;
+let pcTotalUnread    = 0;
+let pcFamilySearchTerm = '';
+
+const QUICK_REPLIES = [
+  { icon:'✅', text:'الرضيع بحالة جيدة ومستقرة، لا داعي للقلق.' },
+  { icon:'🌡️', text:'درجة حرارة الرضيع طبيعية حالياً.' },
+  { icon:'🍼', text:'تم إعطاء الرضيع وجبته بشكل كامل.' },
+  { icon:'😴', text:'الرضيع نائم بشكل هادئ.' },
+  { icon:'💊', text:'تم إعطاء الدواء في وقته المحدد.' },
+  { icon:'👨‍⚕️', text:'سيتفقد الطبيب الرضيع في الجولة القادمة.' },
+  { icon:'📞', text:'يرجى الاتصال بالوحدة للاستفسار المباشر.' },
+  { icon:'🏥', text:'يمكن زيارة الرضيع خلال ساعات الزيارة المحددة.' },
+];
+
+function initParentChat() {
+  renderQuickReplies();
+  if (isConnected && firebaseDb) startListeningFamilies();
+}
+
+function startListeningFamilies() {
+  if (pcFamiliesUnsub) { pcFamiliesUnsub(); pcFamiliesUnsub = null; }
+  const { ref, onValue } = window._firebaseModules;
+  const basePath = document.getElementById('firebasePath')?.value?.trim() || 'incubator';
+
+  pcFamiliesUnsub = onValue(ref(firebaseDb, `${basePath}/parentChat`), snap => {
+    pcFamiliesData = {};
+    snap.forEach(familySnap => {
+      const fKey = familySnap.key;
+      const msgs = [];
+      familySnap.forEach(msgSnap => { msgs.push({ id: msgSnap.key, ...msgSnap.val() }); });
+      msgs.sort((a,b) => (a.ts||0) - (b.ts||0));
+      if (!msgs.length) return;
+      const last   = msgs[msgs.length - 1];
+      const unread = msgs.filter(m => m.sender === 'parent' && !m.readByTeam).length;
+      pcFamiliesData[fKey] = { key: fKey, name: last.senderName || fKey,
+        fileNo: last.fileNo || '', msgs, unread, lastMsg: last };
+    });
+    renderFamilyList();
+    updateTotalUnread();
+    if (pcSelectedFamily && pcFamiliesData[pcSelectedFamily.key])
+      renderMessages(pcFamiliesData[pcSelectedFamily.key].msgs);
+  });
+}
+
+function renderFamilyList() {
+  const list  = document.getElementById('familyList');
+  const empty = document.getElementById('familyEmpty');
+  const term  = pcFamilySearchTerm.toLowerCase();
+  const items = Object.values(pcFamiliesData)
+    .filter(f => !term || f.name.toLowerCase().includes(term) || f.fileNo.toLowerCase().includes(term))
+    .sort((a,b) => (b.lastMsg?.ts||0) - (a.lastMsg?.ts||0));
+
+  if (!items.length) {
+    list.innerHTML = ''; list.appendChild(empty); empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = items.map(f => {
+    const initials = f.name.trim().split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase() || '؟';
+    const preview  = (f.lastMsg?.text || '').slice(0,45);
+    const isActive = pcSelectedFamily?.key === f.key;
+    return `<div class="family-item ${isActive?'active':''}" onclick="selectFamily('${f.key}')" data-fkey="${f.key}">
+      <div class="family-avatar">${initials}</div>
+      <div class="family-info">
+        <div class="family-name">${escHtmlPc(f.name)}</div>
+        <div class="family-preview">${f.fileNo?'ملف: '+escHtmlPc(f.fileNo)+' — ':''}${escHtmlPc(preview)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+        <span class="family-time">${formatTimePc(f.lastMsg?.ts)}</span>
+        ${f.unread>0?'<span class="family-unread">'+f.unread+'</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.selectFamily = function(fKey) {
+  const family = pcFamiliesData[fKey]; if (!family) return;
+  pcSelectedFamily = family;
+  const initials = family.name.trim().split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase() || '؟';
+  document.getElementById('pcFamilyAvatar').textContent = initials;
+  document.getElementById('pcFamilyName').textContent   = family.name;
+  document.getElementById('pcFamilyFile').textContent   = family.fileNo ? 'ملف رقم: ' + family.fileNo : 'بدون رقم ملف';
+  document.getElementById('pcOnlineBadge').textContent  = '📨 ' + family.msgs.length + ' رسالة';
+  const inp = document.getElementById('pcReplyInput');
+  const btn = document.getElementById('pcSendBtn');
+  inp.disabled = false; inp.placeholder = `رد على ${family.name}...`;
+  btn.disabled = false; btn.style.opacity = '1';
+  document.getElementById('pcNoFamily').style.display = 'none';
+  renderMessages(family.msgs);
+  document.querySelectorAll('.family-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.fkey === fKey));
+  markMessagesRead(fKey);
+};
+
+function renderMessages(msgs) {
+  const container = document.getElementById('pcMessages');
+  let html = '', lastDate = '';
+  msgs.forEach(msg => {
+    const d = msg.ts ? new Date(msg.ts) : new Date();
+    const dateLabel = d.toLocaleDateString('ar-DZ', {weekday:'long', day:'numeric', month:'long'});
+    if (dateLabel !== lastDate) {
+      html += `<div class="pc-date-divider"><span>${dateLabel}</span></div>`; lastDate = dateLabel;
+    }
+    const isTeam  = msg.sender === 'team';
+    const timeStr = msg.timeStr || d.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+    html += `<div class="pc-msg ${isTeam?'team':'parent'}">
+      <div class="pc-av">${isTeam?'🩺':'👤'}</div>
+      <div>
+        <div class="pc-bubble">${escHtmlPc(msg.text||'').replace(/\n/g,'<br>')}</div>
+        <div class="pc-meta">${isTeam?'':'<strong>'+escHtmlPc(msg.senderName||'الولي')+'</strong> · '}${timeStr}</div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html + document.getElementById('pcNoFamily').outerHTML;
+  document.getElementById('pcNoFamily').style.display = 'none';
+  container.scrollTop = container.scrollHeight;
+}
+
+window.sendTeamReply = async function() {
+  const inp = document.getElementById('pcReplyInput');
+  const txt = inp.value.trim();
+  if (!txt || !pcSelectedFamily || !isConnected || !firebaseDb) return;
+  inp.value = ''; inp.style.height = 'auto';
+  const { ref, push, set } = window._firebaseModules;
+  const basePath = document.getElementById('firebasePath')?.value?.trim() || 'incubator';
+  const timeStr  = new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+  try {
+    const r = push(ref(firebaseDb, `${basePath}/parentChat/${pcSelectedFamily.key}`));
+    await set(r, { sender:'team', senderName:'الفريق الطبي — NICU',
+      text: txt, timeStr, ts: Date.now(), readByTeam: true });
+    addAlert(`✅ تم إرسال الرد إلى ${pcSelectedFamily.name}`, 'success');
+  } catch(err) { addAlert('❌ فشل الإرسال: ' + err.message, 'danger'); }
+};
+
+window.sendNoteToFamily = async function() {
+  const note = document.getElementById('noteForFamily').value.trim();
+  if (!note) { addAlert('⚠️ اكتب ملاحظة أولاً', 'warning'); return; }
+  if (!pcSelectedFamily || !isConnected || !firebaseDb) {
+    addAlert('⚠️ اختر أسرة من القائمة أولاً', 'warning'); return; }
+  const { ref, push, set } = window._firebaseModules;
+  const basePath = document.getElementById('firebasePath')?.value?.trim() || 'incubator';
+  const timeStr  = new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+  try {
+    await set(push(ref(firebaseDb, `${basePath}/parentNotes`)), { text: note, time: timeStr, ts: Date.now() });
+    document.getElementById('noteForFamily').value = '';
+    addAlert(`📌 تم نشر الملاحظة لأسرة ${pcSelectedFamily.name}`, 'success');
+  } catch(err) { addAlert('❌ فشل النشر: ' + err.message, 'danger'); }
+};
+
+async function markMessagesRead(fKey) {
+  if (!isConnected || !firebaseDb) return;
+  const { ref, get, set } = window._firebaseModules;
+  const basePath = document.getElementById('firebasePath')?.value?.trim() || 'incubator';
+  try {
+    const snap = await get(ref(firebaseDb, `${basePath}/parentChat/${fKey}`));
+    const updates = [];
+    snap.forEach(child => {
+      if (child.val().sender === 'parent' && !child.val().readByTeam)
+        updates.push(set(ref(firebaseDb, `${basePath}/parentChat/${fKey}/${child.key}/readByTeam`), true));
+    });
+    await Promise.all(updates);
+    if (pcFamiliesData[fKey]) pcFamiliesData[fKey].unread = 0;
+    updateTotalUnread(); renderFamilyList();
+  } catch(_) {}
+}
+
+function updateTotalUnread() {
+  pcTotalUnread = Object.values(pcFamiliesData).reduce((s,f) => s+(f.unread||0), 0);
+  const badge = document.getElementById('chatUnreadBadge');
+  const pcBadge = document.getElementById('pcUnreadCount');
+  if (badge)  { badge.style.display = pcTotalUnread>0?'inline':'none'; badge.textContent = pcTotalUnread; }
+  if (pcBadge){ pcBadge.style.display = pcTotalUnread>0?'inline-flex':'none';
+    document.getElementById('pcUnreadNum').textContent = pcTotalUnread; }
+}
+
+window.filterFamilies = t => { pcFamilySearchTerm = t; renderFamilyList(); };
+window.refreshFamilyList = () => {
+  if (isConnected && firebaseDb) { startListeningFamilies(); addAlert('🔄 جاري تحديث القائمة...','info'); }
+  else addAlert('⚠️ يجب الاتصال بـ Firebase أولاً','warning');
+};
+
+function renderQuickReplies() {
+  const list = document.getElementById('quickRepliesList'); if (!list) return;
+  list.innerHTML = QUICK_REPLIES.map(r =>
+    `<button class="qr-item" onclick="useQuickReply('${r.text.replace(/'/g,"\\'")}')">${r.icon} ${r.text}</button>`
+  ).join('');
+}
+
+window.toggleQuickReplies = () => {
+  const p = document.getElementById('quickRepliesPanel');
+  p.style.display = p.style.display==='none'?'block':'none';
+};
+window.useQuickReply = t => {
+  document.getElementById('pcReplyInput').value = t;
+  document.getElementById('pcReplyInput').focus();
+  document.getElementById('quickRepliesPanel').style.display = 'none';
+};
+window.pcHandleKey = e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendTeamReply();} };
+
+function updatePcConnectionStatus() {
+  const dot = document.getElementById('pcConnDot');
+  const txt = document.getElementById('pcConnTxt');
+  if (!dot||!txt) return;
+  if (isConnected) {
+    dot.style.background = '#10b981'; txt.textContent = 'متصل — بيانات مباشرة';
+    startListeningFamilies();
+  } else { dot.style.background = '#6b7280'; txt.textContent = 'يتطلب اتصال Firebase'; }
+}
+
+function formatTimePc(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  if (diff < 60000)    return 'الآن';
+  if (diff < 3600000)  return Math.floor(diff/60000) + ' د';
+  if (diff < 86400000) return new Date(ts).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+  return new Date(ts).toLocaleDateString('ar-DZ',{day:'numeric',month:'short'});
+}
+function escHtmlPc(s) {
+  if(!s)return''; return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
+}
+window.initParentChat          = initParentChat;
+window.updatePcConnectionStatus = updatePcConnectionStatus;
+    
 // ================================================================
 // 🚀 التهيئة
 // ================================================================
@@ -2300,6 +2682,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAerosolDeviceUI();
     updateLightTherapyDeviceUI();
     updateUVDeviceUI();
+    initParentChat();
+    updatePcConnectionStatus();
 });
 </script>
 </body>
